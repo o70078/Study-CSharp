@@ -361,20 +361,27 @@ class Program
 	#endregion
 
 	#region 消息队列
-	static MessageQueue MQ = new MessageQueue(@".\Private$\abc");
+	static bool MQLocal=false;
+	static MessageQueue MQ = new MessageQueue(MQLocal? @".\Private$\abc":@"FormatName:Direct=TCP:121.42.8.67\Private$\AsmXQueue",false,true,QueueAccessMode.SendAndReceive);
 	private static void TestMessageQueue()
 	{
+		
+		{
+			System.Messaging.Message message = new System.Messaging.Message();
+			message.Priority = MessagePriority.High;//优先级
+			message.Body = "Hello Message";
+			message.Formatter = new XmlMessageFormatter(new Type[] { typeof(string) });
+			MQ.Send(message,MessageQueueTransactionType.Single);
+			message.Dispose();
+		}
+		// */
 
-		// Create message
-		System.Messaging.Message message = new System.Messaging.Message();
-		message.Body = "Hello Message";
-		message.Formatter = new System.Messaging.XmlMessageFormatter(new Type[] { typeof(string) });
-		MQ.Send(message);
-
-		// Receive message, 同步的Receive方法阻塞当前执行线程，直到一个message可以得到
-		System.Messaging.Message message2 = MQ.Receive();
-		message.Formatter = new System.Messaging.XmlMessageFormatter(new Type[] { typeof(string) });
-		Console.WriteLine(message.Body.ToString());
+		{
+			System.Messaging.Message message = MQ.Receive(MessageQueueTransactionType.Single);
+			message.Formatter = new XmlMessageFormatter(new Type[] { typeof(string) });
+			Console.WriteLine(message.Body.ToString());
+		}
+		// */
 	}
 	#endregion
 	/*
